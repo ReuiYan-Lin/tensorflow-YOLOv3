@@ -10,7 +10,7 @@ import pickle
 import numpy as np
 
 def parse_rec(filename):
-    """ Parse a PASCAL VOC xml file """
+
     tree = ET.parse(filename)
     objects = []
     for obj in tree.findall('object'):
@@ -29,11 +29,7 @@ def parse_rec(filename):
     return objects
 
 def voc_ap(rec, prec, use_07_metric=False):
-    """ ap = voc_ap(rec, prec, [use_07_metric])
-    Compute VOC AP given precision and recall.
-    If use_07_metric is true, uses the
-    VOC 07 11 point method (default:False).
-    """
+
     if use_07_metric:
         # 11 point metric
         ap = 0.
@@ -68,26 +64,7 @@ def voc_eval(detpath,
              cachedir,
              ovthresh=0.5,
              use_07_metric=False):
-    """rec, prec, ap = voc_eval(detpath,
-                                annopath,
-                                imagesetfile,
-                                classname,
-                                [ovthresh],
-                                [use_07_metric])
 
-    Top level function that does the PASCAL VOC evaluation.
-
-    detpath: Path to detections
-        detpath.format(classname) should produce the detection results file.
-    annopath: Path to annotations
-        annopath.format(imagename) should be the xml annotations file.
-    imagesetfile: Text file containing the list of images, one image per line.
-    classname: Category name (duh)
-    cachedir: Directory for caching the annotations
-    [ovthresh]: Overlap threshold (default = 0.5)
-    [use_07_metric]: Whether to use VOC07's 11 point AP computation
-        (default False)
-    """
     # assumes detections are in detpath.format(classname)
     # assumes annotations are in annopath.format(imagename)
     # assumes imagesetfile is a text file with each line an image name

@@ -52,30 +52,14 @@ class Evaluator(object):
         return bboxes
 
     def __convert_pred(self, pred_bbox, test_input_size, org_img_shape, valid_scale):
-        """
-        将yolo输出的bbox信息(xmin, ymin, xmax, ymax, confidence, probability)进行转换，
-        其中(xmin, ymin, xmax, ymax)是预测bbox的左上角和右下角坐标
-        confidence是预测bbox属于物体的概率，probability是条件概率分布
-        (xmin, ymin, xmax, ymax) --> (xmin_org, ymin_org, xmax_org, ymax_org)
-        --> 将预测的bbox中超出原图的部分裁掉 --> 将分数低于score_threshold的bbox去掉
-        :param pred_bbox: yolo输出的bbox信息，shape为(output_size * output_size * gt_per_grid, 5 + num_classes)
-        :param test_input_size: 测试尺寸
-        :param org_img_shape: 存储格式必须为(h, w)，输入原图的shape
-        :return: bboxes
-        假设有N个bbox的score大于score_threshold，那么bboxes的shape为(N, 6)，存储格式为(xmin, ymin, xmax, ymax, score, class)
-        其中(xmin, ymin, xmax, ymax)的大小都是相对于输入原图的，score = conf * prob，class是bbox所属类别的索引号
-        """
+
         pred_bbox = np.array(pred_bbox)
 
         pred_coor = pred_bbox[:, 0:4]
         pred_conf = pred_bbox[:, 4]
         pred_prob = pred_bbox[:, 5:]
 
-        # (1)
-        # (xmin_org, xmax_org) = ((xmin, xmax) - dw) / resize_ratio
-        # (ymin_org, ymax_org) = ((ymin, ymax) - dh) / resize_ratio
-        # 需要注意的是，无论我们在训练的时候使用什么数据增强方式，都不影响此处的转换方式
-        # 假设我们对输入测试图片使用了转换方式A，那么此处对bbox的转换方式就是方式A的逆向过程
+
         org_h, org_w = org_img_shape
         resize_ratio = min(1.0 * test_input_size / org_w, 1.0 * test_input_size / org_h)
         dw = (test_input_size - resize_ratio * org_w) / 2
@@ -83,18 +67,18 @@ class Evaluator(object):
         pred_coor[:, 0::2] = 1.0 * (pred_coor[:, 0::2] - dw) / resize_ratio
         pred_coor[:, 1::2] = 1.0 * (pred_coor[:, 1::2] - dh) / resize_ratio
 
-        # (2)将预测的bbox中超出原图的部分裁掉
+
         pred_coor = np.concatenate([np.maximum(pred_coor[:, :2], [0, 0]),
                                     np.minimum(pred_coor[:, 2:], [org_w - 1, org_h - 1])], axis=-1)
-        # (3)将无效bbox的coor置为0
+
         invalid_mask = np.logical_or((pred_coor[:, 0] > pred_coor[:, 2]), (pred_coor[:, 1] > pred_coor[:, 3]))
         pred_coor[invalid_mask] = 0
 
-        # (4)去掉不在有效范围内的bbox
+
         bboxes_scale = np.sqrt(np.multiply.reduce(pred_coor[:, 2:4] - pred_coor[:, 0:2], axis=-1))
         scale_mask = np.logical_and((valid_scale[0] < bboxes_scale), (bboxes_scale < valid_scale[1]))
 
-        # (5)将score低于score_threshold的bbox去掉
+
         classes = np.argmax(pred_prob, axis=-1)
         scores = pred_conf * pred_prob[np.arange(len(pred_coor)), classes]
         score_mask = scores > self._score_threshold
@@ -110,10 +94,7 @@ class Evaluator(object):
         return bboxes
 
     def get_bbox(self, image, multi_test=False, flip_test=False):
-        """
-        :param image: 要预测的图片
-        :return: 返回NMS后的bboxes，存储格式为(xmin, ymin, xmax, ymax, score, class)
-        """
+
         if multi_test:
             test_input_sizes = self._train_input_sizes[::3]
             bboxes_list = []
@@ -131,11 +112,7 @@ class Evaluator(object):
         return bboxes
 
     def __APs_calc(self, iou_thresh=0.5, use_07_metric=False):
-        """
-        :param iou_thresh: 计算AP时用的iou阈值
-        :param use_07_metric: 是否使用07年的11点计算方式
-        :return: 所有类别的APs，元素是字典{cls:ap}
-        """
+
         filename = os.path.join(self._project_path, 'eval', 'results', 'VOC2007', 'Main', 'comp3_det_test_{:s}.txt')
         cachedir = os.path.join(self._project_path, 'eval', 'cache')
         #annopath = os.path.join(self._dataset_path, '2007_test', 'Annotations', '{:s}.xml')
@@ -152,12 +129,7 @@ class Evaluator(object):
         return APs
 
     def APs_voc(self, year=2007, multi_test=False, flip_test=False):
-        """
-        :param year: 使用哪个数据集测试
-        :param multi_test: 是否使用多尺度测试
-        :param flip_test: 是否使用水平翻转测试
-        :return: 如果测试VOC2007，那么返回所有字典AP={cls:ap}，如果测试VOC2012，那么返回None
-        """
+
         assert (year == 2007 or year == 2012)
         test_set_path = os.path.join(self._dataset_path, '%d_test' % year)
         img_inds_file = os.path.join(test_set_path, 'ImageSets', 'Main', 'test.txt')
