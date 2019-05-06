@@ -52,7 +52,7 @@ class Yolo_train(Evaluator):
         conv_sbbox, conv_mbbox, conv_lbbox, \
         pred_sbbox, pred_mbbox, pred_lbbox = yolo.build_nework(self.__input_data)
 
-        # 放在这里主要是因为后面使用滑动平均变量时会多出额外的影子变量
+
         load_var = tf.global_variables('yolov3')
         restore_dict = self.__get_restore_dict(load_var)
 
