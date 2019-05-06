@@ -78,22 +78,7 @@ class Tiny_YOLOV3(object):
         return focal
 
     def __loss_per_scale(self, name, conv, pred, label, bboxes, stride):
-        """
-        :param name: loss的名字
-        :param conv: conv是yolo卷积层的原始输出
-        shape为(batch_size, output_size, output_size, anchor_per_scale * (5 + num_class))
-        :param pred: conv是yolo输出的预测bbox的信息(x, y, w, h, conf, prob)，
-        其中(x, y, w, h)的大小是相对于input_size的，如input_size=416，(x, y, w, h) = (120, 200, 50, 70)
-        shape为(batch_size, output_size, output_size, anchor_per_scale, 5 + num_class)
-        :param label: shape为(batch_size, output_size, output_size, anchor_per_scale, 6 + num_classes)
-        只有负责预测GT的对应位置的数据才为(xmin, ymin, xmax, ymax, 1, classes, mixup_weights),
-        其他位置的数据都为(0, 0, 0, 0, 0, 0..., 1)
-        :param bboxes: shape为(batch_size, max_bbox_per_scale, 4)，
-        存储的坐标为(xmin, ymin, xmax, ymax)
-        bboxes用于计算相应detector的预测框与该detector负责预测的所有bbox的IOU
-        :param anchors: 相应detector的anchors
-        :param stride: 相应detector的stride
-        """
+
         with tf.name_scope(name):
             conv_shape = tf.shape(conv)
             batch_size = conv_shape[0]
@@ -147,17 +132,7 @@ class Tiny_YOLOV3(object):
              pred_mbbox, pred_lbbox,
              label_mbbox, label_lbbox,
              mbboxes, lbboxes):
-        """
-        :param conv_mbbox: shape为(batch_size, image_size / 16, image_size / 16, anchors_per_scale * (5 + num_classes))
-        :param conv_lbbox: shape为(batch_size, image_size / 32, image_size / 32, anchors_per_scale * (5 + num_classes))
-        :param pred_mbbox: shape为(batch_size, image_size / 16, image_size / 16, anchors_per_scale, (5 + num_classes))
-        :param pred_lbbox: shape为(batch_size, image_size / 32, image_size / 32, anchors_per_scale, (5 + num_classes))
-        :param label_mbbox: shape为(batch_size, input_size / 16, input_size / 16, anchor_per_scale, 6 + num_classes)
-        :param label_lbbox: shape为(batch_size, input_size / 32, input_size / 32, anchor_per_scale, 6 + num_classes)
-        :param mbboxes: shape为(batch_size, max_bbox_per_scale, 4)
-        :param lbboxes: shape为(batch_size, max_bbox_per_scale, 4)
-        :return:
-        """
+
         loss_mbbox = self.__loss_per_scale('loss_mbbox', conv_mbbox, pred_mbbox, label_mbbox, mbboxes,
                                            self.__strides[0])
         loss_lbbox = self.__loss_per_scale('loss_lbbox', conv_lbbox, pred_lbbox, label_lbbox, lbboxes,
