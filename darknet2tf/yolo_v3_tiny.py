@@ -16,17 +16,7 @@ _ANCHORS = [(10, 14),  (23, 27),  (37, 58),
 
 
 def yolo_v3_tiny(inputs, num_classes, is_training=False, data_format='NCHW', reuse=False):
-    """
-    Creates YOLO v3 tiny model.
 
-    :param inputs: a 4-D tensor of size [batch_size, height, width, channels].
-        Dimension batch_size may be undefined. The channel order is RGB.
-    :param num_classes: number of predicted classes.
-    :param is_training: whether is training or not.
-    :param data_format: data format NCHW or NHWC.
-    :param reuse: whether or not the network and its variables should be reused.
-    :return:
-    """
     # it will be needed later on
     img_size = inputs.get_shape().as_list()[1:3]
 

@@ -36,13 +36,6 @@ if __name__ == '__main__':
         summary_writer.add_graph(tf.get_default_graph())
         
     if IS_Tiny:
-        '''
-        with tf.variable_scope('detector'):
-            detections = yolo_v3_tiny(inputs, coco_class_num,
-                           data_format=FLAGS.data_format)
-            load_ops = load_weights(tf.global_variables(
-                    scope='detector'), FLAGS.weights_file)               
-        '''
         with tf.variable_scope('yolo-v3-tiny'):
             detections = yolo_v3_tiny(inputs, coco_class_num,data_format=FLAGS.data_format)
             
