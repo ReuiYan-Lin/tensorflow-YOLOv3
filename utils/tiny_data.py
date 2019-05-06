@@ -19,11 +19,7 @@ except ImportError:
 
 class Data(object):
     def __init__(self, dataset_type, split_ratio=1.0):
-        """
-        需始终记住：
-        small_detector对应下标索引0， medium_detector对应下标索引1，big_detector对应下标索引2
-        :param dataset_type: 选择加载训练样本或测试样本，必须是'train' or 'test'
-        """
+
         self.__annot_dir_path = cfg.ANNOT_DIR_PATH
         self.__train_input_sizes = cfg.TRAIN_INPUT_SIZES
         self.__strides = np.array(cfg.STRIDES)
@@ -47,11 +43,7 @@ class Data(object):
         self.__num_batchs = np.ceil(self.__num_samples // self.__batch_size)
         logging.info('Use the new batch size: %d' % self.__batch_size)
     def __load_annotations(self, dataset_type):
-        """
-        :param dataset_type: 选择加载训练样本或测试样本，必须是'train' or 'test'
-        :return: annotations，每个元素的形式如下：
-        image_path xmin,ymin,xmax,ymax,class_ind xmin,ymin,xmax,ymax,class_ind ...
-        """
+
         if dataset_type not in ['train', 'test']:
             raise ImportError("You must choice one of the 'train' or 'test' for dataset_type parameter")
         annotation_path = os.path.join(self.__annot_dir_path, dataset_type + '_annotation.txt')
@@ -65,17 +57,7 @@ class Data(object):
         return self
 
     def __next__(self):
-        """
-        使得pascal_voc对象变为可迭代对象
-        :return: 每次迭代返回一个batch的图片、标签
-        batch_image: shape为(batch_size, input_size, input_size, 3)
-        batch_label_sbbox: shape为(batch_size, input_size / 8, input_size / 8, 6 + num_classes)
-        batch_label_mbbox: shape为(batch_size, input_size / 16, input_size / 16, 6 + num_classes)
-        batch_label_lbbox: shape为(batch_size, input_size / 32, input_size / 32, 6 + num_classes)
-        batch_sbboxes: shape为(batch_size, max_bbox_per_scale, 4)
-        batch_mbboxes: shape为(batch_size, max_bbox_per_scale, 4)
-        batch_lbboxes: shape为(batch_size, max_bbox_per_scale, 4)
-        """
+
         with tf.device('/cpu:0'):
             self.__train_input_size = random.choice(self.__train_input_sizes)
             self.__train_output_sizes = self.__train_input_size // self.__strides
@@ -131,15 +113,7 @@ class Data(object):
                 raise StopIteration
 
     def __parse_annotation(self, annotation):
-        """
-        读取annotation中image_path对应的图片，并将该图片进行resize(不改变图片的高宽比)
-        获取annotation中所有的bbox，并将这些bbox的坐标(xmin, ymin, xmax, ymax)进行纠正，
-        使得纠正后bbox在resize后的图片中的相对位置与纠正前bbox在resize前的图片中的相对位置相同
-        :param annotation: 图片地址和bbox的坐标、类别，
-        如：image_path xmin,ymin,xmax,ymax,class_ind xmin,ymin,xmax,ymax,class_ind ...
-        :return: image和bboxes
-        bboxes的shape为(N, 5)，其中N表示一站图中有N个bbox，5表示(xmin, ymin, xmax, ymax, class_ind)
-        """
+
         line = annotation.split()
         image_path = line[0]
         image = np.array(cv2.imread(image_path))
@@ -153,21 +127,7 @@ class Data(object):
         return image, bboxes
     
     def __create_tiny_label(self,bboxes):
-        """
-        :param bboxes: 一张图对应的所有bbox和每个bbox所属的类别，以及mixup的权重，
-        bbox的坐标为(xmin, ymin, xmax, ymax, class_ind, mixup_weight)
-        :return:
-        label_sbbox: shape为(input_size / 8, input_size / 8, anchor_per_scale, 6 + num_classes)
-        label_mbbox: shape为(input_size / 16, input_size / 16, anchor_per_scale, 6 + num_classes)
-        label_lbbox: shape为(input_size / 32, input_size / 32, anchor_per_scale, 6 + num_classes)
-        只要某个GT落入grid中，那么这个grid就负责预测它，最多负责预测gt_per_grid个GT，
-        那么该grid中对应位置的数据为(xmin, ymin, xmax, ymax, 1, classes, mixup_weights),
-        其他grid对应位置的数据都为(0, 0, 0, 0, 0, 0..., 1)
-        sbboxes：shape为(max_bbox_per_scale, 4)
-        mbboxes：shape为(max_bbox_per_scale, 4)
-        lbboxes：shape为(max_bbox_per_scale, 4)
-        存储的坐标为(xmin, ymin, xmax, ymax)，大小都是bbox纠正后的原始大小
-        """
+
         label = [np.zeros((self.__train_output_sizes[i], self.__train_output_sizes[i], self.__gt_per_grid,
                            6 + self.__num_classes)) for i in range(2)]
         # mixup weight位默认为1.0
@@ -195,14 +155,6 @@ class Data(object):
             # (xmin, ymin, xmax, ymax) -> (x_center, y_center)
             bbox_center = (bbox_coor[2:] + bbox_coor[:2]) * 0.5
 
-            '''
-            if bbox_scale <= 30:
-                best_detect = 0
-            elif (30 < bbox_scale) and (bbox_scale <= 90):
-                best_detect = 1
-            else:
-                best_detect = 2
-            '''
             if bbox_scale <= 60:
                 best_detect = 0
             else:

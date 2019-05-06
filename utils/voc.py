@@ -8,12 +8,7 @@ import config as cfg
 
 
 def convert_voc_annotation(data_path, data_type, anno_path, use_difficult_bbox=False):
-    """
-    :param data_path: 数据集的路径，如'/home/wz/doc/code/python_code/data/VOC/2012_trainval'
-    :param data_type: 数据类型，如'trainval'
-    :param anno_path: 标签存放的地址
-    :return: None
-    """
+
     classes = ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
                'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
                'motorbike', 'person', 'pottedplant', 'sheep', 'sofa',

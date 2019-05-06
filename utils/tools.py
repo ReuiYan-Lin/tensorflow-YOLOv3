@@ -8,43 +8,31 @@ import cv2
 
 
 def sigmoid(arr):
-    """
-    对数组arr中的每个元素执行sigmoid计算
-    :param arr: 任意shape的数组
-    :return: sigmoid后的数组
-    """
+
     arr = np.array(arr, dtype=np.float128)
     return 1.0 / (1.0 + np.exp(-1.0 * arr))
 
 
 def softmax(arr):
-    """
-    :param arr: arr最后一维必须是logic维
-    :return: softmax后的arr
-    """
+
     arr = np.array(arr, dtype=np.float128)
     arr_exp = np.exp(arr)
     return arr_exp / np.expand_dims(np.sum(arr_exp, axis=-1), axis=-1)
 
 
 def iou_calc1(boxes1, boxes2):
-    """
-    :param boxes1: boxes1和boxes2的shape可以不相同，但是需要满足广播机制
-    :param boxes2: 且需要保证最后一维为坐标维，以及坐标的存储结构为(xmin, ymin, xmax, ymax)
-    :return: 返回boxes1和boxes2的IOU，IOU的shape为boxes1和boxes2广播后的shape[:-1]
-    """
+
     boxes1 = np.array(boxes1)
     boxes2 = np.array(boxes2)
 
     boxes1_area = (boxes1[..., 2] - boxes1[..., 0]) * (boxes1[..., 3] - boxes1[..., 1])
     boxes2_area = (boxes2[..., 2] - boxes2[..., 0]) * (boxes2[..., 3] - boxes2[..., 1])
 
-    # 计算出boxes1和boxes2相交部分的左上角坐标、右下角坐标
+
     left_up = np.maximum(boxes1[..., :2], boxes2[..., :2])
     right_down = np.minimum(boxes1[..., 2:], boxes2[..., 2:])
 
-    # 计算出boxes1和boxes2相交部分的宽、高
-    # 因为两个boxes没有交集时，(right_down - left_up) < 0，所以maximum可以保证当两个boxes没有交集时，它们之间的iou为0
+
     inter_section = np.maximum(right_down - left_up, 0.0)
     inter_area = inter_section[..., 0] * inter_section[..., 1]
     union_area = boxes1_area + boxes2_area - inter_area
@@ -53,29 +41,22 @@ def iou_calc1(boxes1, boxes2):
 
 
 def iou_calc2(boxes1, boxes2):
-    """
-    :param boxes1: boxes1和boxes2的shape可以不相同，但是需要满足广播机制
-    :param boxes2: 且需要保证最后一维为坐标维，以及坐标的存储结构为(x,y,w,h)，其中(x,y)是bbox的中心坐标
-    :return: 返回boxes1和boxes2的IOU，IOU的shape为boxes1和boxes2广播后的shape[:-1]
-    """
+
     boxes1 = np.array(boxes1)
     boxes2 = np.array(boxes2)
 
     boxes1_area = boxes1[..., 2] * boxes1[..., 3]
     boxes2_area = boxes2[..., 2] * boxes2[..., 3]
 
-    # 分别计算出boxes1和boxes2的左上角坐标、右下角坐标
-    # 存储结构为(xmin, ymin, xmax, ymax)，其中(xmin,ymin)是bbox的左上角坐标，(xmax,ymax)是bbox的右下角坐标
+
     boxes1 = np.concatenate([boxes1[..., :2] - boxes1[..., 2:] * 0.5,
                              boxes1[..., :2] + boxes1[..., 2:] * 0.5], axis=-1)
     boxes2 = np.concatenate([boxes2[..., :2] - boxes2[..., 2:] * 0.5,
                              boxes2[..., :2] + boxes2[..., 2:] * 0.5], axis=-1)
 
-    # 计算出boxes1与boxes1相交部分的左上角坐标、右下角坐标
     left_up = np.maximum(boxes1[..., :2], boxes2[..., :2])
     right_down = np.minimum(boxes1[..., 2:], boxes2[..., 2:])
 
-    # 因为两个boxes没有交集时，(right_down - left_up) < 0，所以maximum可以保证当两个boxes没有交集时，它们之间的iou为0
     inter_section = np.maximum(right_down - left_up, 0.0)
     inter_area = inter_section[..., 0] * inter_section[..., 1]
     union_area = boxes1_area + boxes2_area - inter_area
@@ -84,19 +65,15 @@ def iou_calc2(boxes1, boxes2):
 
 
 def iou_calc3(boxes1, boxes2):
-    """
-    :param boxes1: boxes1和boxes2的shape可以不相同，但是需要满足广播机制，且需要是Tensor
-    :param boxes2: 且需要保证最后一维为坐标维，以及坐标的存储结构为(xmin, ymin, xmax, ymax)
-    :return: 返回boxes1和boxes2的IOU，IOU的shape为boxes1和boxes2广播后的shape[:-1]
-    """
+
     boxes1_area = (boxes1[..., 2] - boxes1[..., 0]) * (boxes1[..., 3] - boxes1[..., 1])
     boxes2_area = (boxes2[..., 2] - boxes2[..., 0]) * (boxes2[..., 3] - boxes2[..., 1])
 
-    # 计算出boxes1与boxes1相交部分的左上角坐标、右下角坐标
+
     left_up = tf.maximum(boxes1[..., :2], boxes2[..., :2])
     right_down = tf.minimum(boxes1[..., 2:], boxes2[..., 2:])
 
-    # 因为两个boxes没有交集时，(right_down - left_up) < 0，所以maximum可以保证当两个boxes没有交集时，它们之间的iou为0
+
     inter_section = tf.maximum(right_down - left_up, 0.0)
     inter_area = inter_section[..., 0] * inter_section[..., 1]
     union_area = boxes1_area + boxes2_area - inter_area
@@ -104,26 +81,20 @@ def iou_calc3(boxes1, boxes2):
     return IOU
 
 def iou_calc4(boxes1, boxes2):
-    """
-    :param boxes1: boxes1和boxes2的shape可以不相同，但是需要满足广播机制，且需要是Tensor
-    :param boxes2: 且需要保证最后一维为坐标维，以及坐标的存储结构为(x, y, w, h)
-    :return: 返回boxes1和boxes2的IOU，IOU的shape为boxes1和boxes2广播后的shape[:-1]
-    """
+
     boxes1_area = boxes1[..., 2] * boxes1[..., 3]
     boxes2_area = boxes2[..., 2] * boxes2[..., 3]
 
-    # 分别计算出boxes1和boxes2的左上角坐标、右下角坐标
-    # 存储结构为(xmin, ymin, xmax, ymax)，其中(xmin,ymin)是bbox的左上角坐标，(xmax,ymax)是bbox的右下角坐标
+
     boxes1 = tf.concat([boxes1[..., :2] - boxes1[..., 2:] * 0.5,
                         boxes1[..., :2] + boxes1[..., 2:] * 0.5], axis=-1)
     boxes2 = tf.concat([boxes2[..., :2] - boxes2[..., 2:] * 0.5,
                         boxes2[..., :2] + boxes2[..., 2:] * 0.5], axis=-1)
 
-    # 计算出boxes1与boxes1相交部分的左上角坐标、右下角坐标
     left_up = tf.maximum(boxes1[..., :2], boxes2[..., :2])
     right_down = tf.minimum(boxes1[..., 2:], boxes2[..., 2:])
 
-    # 因为两个boxes没有交集时，(right_down - left_up) < 0，所以maximum可以保证当两个boxes没有交集时，它们之间的iou为0
+
     inter_section = tf.maximum(right_down - left_up, 0.0)
     inter_area = inter_section[..., 0] * inter_section[..., 1]
     union_area = boxes1_area + boxes2_area - inter_area
@@ -131,11 +102,7 @@ def iou_calc4(boxes1, boxes2):
     return IOU
 
 def GIOU(boxes1, boxes2):
-    """
-    :param boxes1: boxes1和boxes2的shape可以不相同，但是需要满足广播机制，且需要是Tensor
-    :param boxes2: 且需要保证最后一维为坐标维，以及坐标的存储结构为(xmin, ymin, xmax, ymax)
-    :return: 返回boxes1和boxes2的IOU，IOU的shape为boxes1和boxes2广播后的shape[:-1]
-    """
+
     boxes1 = tf.concat([tf.minimum(boxes1[..., :2], boxes1[..., 2:]),
                         tf.maximum(boxes1[..., :2], boxes1[..., 2:])], axis=-1)
     boxes2 = tf.concat([tf.minimum(boxes2[..., :2], boxes2[..., 2:]),
@@ -144,11 +111,10 @@ def GIOU(boxes1, boxes2):
     boxes1_area = (boxes1[..., 2] - boxes1[..., 0]) * (boxes1[..., 3] - boxes1[..., 1])
     boxes2_area = (boxes2[..., 2] - boxes2[..., 0]) * (boxes2[..., 3] - boxes2[..., 1])
 
-    # 计算出boxes1与boxes1相交部分的左上角坐标、右下角坐标
+
     intersection_left_up = tf.maximum(boxes1[..., :2], boxes2[..., :2])
     intersection_right_down = tf.minimum(boxes1[..., 2:], boxes2[..., 2:])
 
-    # 因为两个boxes没有交集时，(right_down - left_up) < 0，所以maximum可以保证当两个boxes没有交集时，它们之间的iou为0
     intersection = tf.maximum(intersection_right_down - intersection_left_up, 0.0)
     inter_area = intersection[..., 0] * intersection[..., 1]
     union_area = boxes1_area + boxes2_area - inter_area
@@ -163,14 +129,7 @@ def GIOU(boxes1, boxes2):
     return GIOU
 
 def nms(bboxes, score_threshold, iou_threshold, sigma=0.3, method='nms'):
-    """
-    :param bboxes:
-    假设有N个bbox的score大于score_threshold，那么bboxes的shape为(N, 6)，存储格式为(xmin, ymin, xmax, ymax, score, class)
-    其中(xmin, ymin, xmax, ymax)的大小都是相对于输入原图的，score = conf * prob，class是bbox所属类别的索引号
-    :return: best_bboxes
-    假设NMS后剩下N个bbox，那么best_bboxes的shape为(N, 6)，存储格式为(xmin, ymin, xmax, ymax, score, class)
-    其中(xmin, ymin, xmax, ymax)的大小都是相对于输入原图的，score = conf * prob，class是bbox所属类别的索引号
-    """
+
     classes_in_img = list(set(bboxes[:, 5]))
     best_bboxes = []
 
@@ -197,13 +156,7 @@ def nms(bboxes, score_threshold, iou_threshold, sigma=0.3, method='nms'):
 
 
 def img_preprocess1(image, bboxes, target_shape, correct_box=True):
-    """
-    RGB转换 -> resize(resize改变了原图的高宽比) -> normalize
-    并可以选择是否校正bbox
-    :param image: 要处理的图像
-    :param target_shape: 对图像处理后，期望得到的图像shape，存储格式为(h, w)
-    :return: 处理之后的图像，shape为target_shape
-    """
+
     h_target, w_target = target_shape
     h_org, w_org, _ = image.shape
 
@@ -222,13 +175,7 @@ def img_preprocess1(image, bboxes, target_shape, correct_box=True):
 
 
 def img_preprocess2(image, bboxes, target_shape, correct_box=True):
-    """
-    RGB转换 -> resize(resize不改变原图的高宽比) -> normalize
-    并可以选择是否校正bbox
-    :param image_org: 要处理的图像
-    :param target_shape: 对图像处理后，期望得到的图像shape，存储格式为(h, w)
-    :return: 处理之后的图像，shape为target_shape
-    """
+
     h_target, w_target = target_shape
     h_org, w_org, _ = image.shape
 
@@ -253,12 +200,7 @@ def img_preprocess2(image, bboxes, target_shape, correct_box=True):
 
 
 def draw_bbox(original_image, bboxes, classes):
-    """
-    :param original_image: 检测的原始图片，shape为(org_h, org_w, 3)
-    :param bboxes: shape为(N, 6)，存储格式为(xmin, ymin, xmax, ymax, score, class)
-    其中(xmin, ymin, xmax, ymax)的大小都是相对于输入原图的，score = conf * prob，class是bbox所属类别的索引号
-    :return: None
-    """
+
     num_classes = len(classes)
     hsv_tuples = [(1.0 * x / num_classes, 1., 1.) for x in range(num_classes)]
     colors = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
