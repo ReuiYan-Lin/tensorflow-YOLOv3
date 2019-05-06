@@ -106,7 +106,7 @@ class Tiny_YOLOV3(object):
             GIOU_loss = respond_bbox * bbox_loss_scale * (1.0 - GIOU)
 
             # (2)计算confidence损失
-            iou = tools.iou_calc3(pred_coor[:, :, :, :, np.newaxis, :],
+            iou = tools.iou_calc(pred_coor[:, :, :, :, np.newaxis, :],
                                   bboxes[:, np.newaxis, np.newaxis, np.newaxis, :, : ])
             max_iou = tf.reduce_max(iou, axis=-1)
             max_iou = max_iou[:, :, :, :, np.newaxis]
